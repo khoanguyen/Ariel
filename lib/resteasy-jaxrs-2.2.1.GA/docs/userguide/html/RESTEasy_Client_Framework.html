@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title xmlns:rf="java:org.jboss.highlight.XhtmlRendererFactory">Chapter 44. Client Framework</title><link rel="stylesheet" href="css/jbossorg.css" type="text/css"/><meta xmlns:rf="java:org.jboss.highlight.XhtmlRendererFactory" name="generator" content="DocBook XSL Stylesheets V1.72.0"/><link rel="start" href="index.html" title="RESTEasy JAX-RS"/><link rel="up" href="index.html" title="RESTEasy JAX-RS"/><link rel="prev" href="Guice1.html" title="Chapter 43. Guice 2.0 Integration"/><link rel="next" href="AJAX_Client.html" title="Chapter 45. AJAX Client"/></head><body><p id="title"><a href="http://www.jboss.org" class="site_href"><strong>JBoss.org</strong></a><a href="http://docs.jboss.org/" class="doc_href"><strong>Community Documentation</strong></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="Guice1.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="AJAX_Client.html"><strong>Next</strong></a></li></ul><div class="chapter" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="RESTEasy_Client_Framework"/>Chapter 44. Client Framework</h2></div></div></div><div class="toc"><dl><dt><span class="sect1"><a href="RESTEasy_Client_Framework.html#Custom_client-side_responses">44.1. Abstract Responses</a></span></dt><dt><span class="sect1"><a href="RESTEasy_Client_Framework.html#Sharing_interfaces">44.2. Sharing an interface between client and server</a></span></dt><dt><span class="sect1"><a href="RESTEasy_Client_Framework.html#Client_error_handling">44.3. Client Error Handling</a></span></dt><dt><span class="sect1"><a href="RESTEasy_Client_Framework.html#ClientRequest">44.4. Manual ClientRequest API</a></span></dt><dt><span class="sect1"><a href="RESTEasy_Client_Framework.html#spring_client_proxy">44.5. Spring integration on client side</a></span></dt></dl></div><p>
+
+        The Resteasy Client Framework is the mirror opposite of the JAX-RS server-side specification. Instead of using
+        JAX-RS annotations to map an incoming request to your RESTFul Web Service method, the client framework builds an
+        HTTP request that it uses to invoke on a remote RESTful Web Service. This remote service does not have to be a
+        JAX-RS service and can be any web resource that accepts HTTP requests.
+    </p><p>
+
+        Resteasy has a client proxy framework that allows you to use JAX-RS annotations to invoke on a remote HTTP
+        resource.
+        The way it works is that you write a Java interface and use JAX-RS annotations on methods and the interface. For
+        example:
+    </p><p>
+
+</p><pre class="programlisting">
+public interface SimpleClient
+{
+   @GET
+   @Path("basic")
+   @Produces("text/plain")
+   String getBasic();
+
+   @PUT
+   @Path("basic")
+   @Consumes("text/plain")
+   void putBasic(String body);
+
+   @GET
+   @Path("queryParam")
+   @Produces("text/plain")
+   String getQueryParam(@QueryParam("param")String param);
+
+   @GET
+   @Path("matrixParam")
+   @Produces("text/plain")
+   String getMatrixParam(@MatrixParam("param")String param);
+
+   @GET
+   @Path("uriParam/{param}")
+   @Produces("text/plain")
+   int getUriParam(@PathParam("param")int param);
+}</pre><p>
+    </p><p>
+
+        Resteasy has a simple API based on Apache HttpClient. You generate a proxy then you can invoke methods on the
+        proxy. The invoked method gets translated to an HTTP request based on how you annotated the method and posted to
+        the server. Here's how you would set this up:
+    </p><p>
+
+        </p><pre class="programlisting">
+            import org.jboss.resteasy.client.ProxyFactory;
+            ...
+            // this initialization only needs to be done once per VM
+            RegisterBuiltin.register(ResteasyProviderFactory.getInstance());
+
+
+            SimpleClient client = ProxyFactory.create(SimpleClient.class, "http://localhost:8081");
+            client.putBasic("hello world");
+        </pre><p>
+    </p><p>
+
+        Please see the ProxyFactory javadoc for more options. For instance, you may want to fine tune the HttpClient
+        configuration.
+    </p><p>
+
+
+    </p><p>
+
+        @CookieParam works the mirror opposite of its server-side counterpart and creates a cookie header to send to the
+        server. You do not need to use @CookieParam if you allocate your own javax.ws.rs.core.Cookie object and pass it
+        as
+        a parameter to a client proxy method. The client framework understands that you are passing a cookie to the
+        server
+        so no extra metadata is needed.
+    </p><p>
+
+
+    </p><p>
+
+        The client framework can use the same providers available on the server. You must manually register them through
+        the ResteasyProviderFactory singleton using the addMessageBodyReader() and addMessageBodyWriter() methods.
+    </p><pre class="programlisting">
+        ResteasyProviderFactory.getInstance().addMessageBodyReader(MyReader.class);
+    </pre><p>
+
+
+    </p><div class="sect1" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="Custom_client-side_responses"/>44.1. Abstract Responses</h2></div></div></div><p>
+
+            Sometimes you are interested not only in the response body of a client request, but also either the response
+            code and/or response headers. The Client-Proxy framework has two ways to get at this information
+        </p><p>
+
+
+        </p><p>
+
+            You may return a javax.ws.rs.core.Response.Status enumeration from your method calls:
+        </p><p>
+
+            </p><pre class="programlisting">
+@Path("/")
+public interface MyProxy {
+   @POST
+   Response.Status updateSite(MyPojo pojo);
+}
+            </pre><p>
+        </p><p>
+
+            Interally, after invoking on the server, the client proxy internals will convert the HTTP response code into
+            a
+            Response.Status enum.
+        </p><p>
+
+
+        </p><p>
+
+            If you are interested in everything, you can get it with the org.jboss.resteasy.spi.ClientResponse interface:
+        </p><pre class="programlisting">
+/**
+ * Response extension for the RESTEasy client framework. Use this, or Response
+ * in your client proxy interface method return type declarations if you want
+ * access to the response entity as well as status and header information.
+ *
+ * @author &lt;a href="mailto:bill@burkecentral.com"&gt;Bill Burke&lt;/a&gt;
+ * @version $Revision: 1 $
+ */
+public abstract class ClientResponse&lt;T&gt; extends Response
+{
+   /**
+    * This method returns the same exact map as Response.getMetadata() except as a map of strings 
+    * rather than objects.
+    *
+    * @return
+    */
+   public abstract MultivaluedMap&lt;String, String&gt; getHeaders();
+
+   public abstract Response.Status getResponseStatus();
+
+   /**
+    * Unmarshal the target entity from the response OutputStream.  You must have type information
+    * set via &lt;T&gt; otherwise, this will not work.
+    * &lt;p/&gt;
+    * This method actually does the reading on the OutputStream.  It will only do the read once.  
+    * Afterwards, it will cache the result and return the cached result.
+    *
+    * @return
+    */
+   public abstract T getEntity();
+
+   /**
+    * Extract the response body with the provided type information
+    * &lt;p/&gt;
+    * This method actually does the reading on the OutputStream.  It will only do the read once.  
+    * Afterwards, it will cache the result and return the cached result.
+    *
+    * @param type
+    * @param genericType
+    * @param &lt;T2&gt;
+    * @return
+    */
+   public abstract &lt;T2&gt; T2 getEntity(Class&lt;T2&gt; type, Type genericType);
+
+   /**
+    * Extract the response body with the provided type information.  GenericType is a trick used to
+    * pass in generic type information to the resteasy runtime.
+    * &lt;p/&gt;
+    * For example:
+    * &lt;pre&gt;
+    * List&lt;String&gt; list = response.getEntity(new GenericType&lt;List&lt;String&gt;() {});
+    * &lt;p/&gt;
+    * &lt;p/&gt;
+    * This method actually does the reading on the OutputStream.  It will only do the read once.  Afterwards, it will
+    * cache the result and return the cached result.
+    *
+    * @param type
+    * @param &lt;T2&gt;
+    * @return
+    */
+   public abstract &lt;T2&gt; T2 getEntity(GenericType&lt;T2&gt; type);
+}
+
+        </pre><p>
+            All the getEntity() methods are deferred until you invoke them. In other words, the response OutputStream is
+            not read
+            until you call one of these methods. The empty paramed getEntity() method can only be used if you have
+            templated the ClientResponse within your method declaration. Resteasy uses this generic type information to
+            know what type to unmarshal the raw OutputStream into. The other two getEntity() methods that take
+            parameters, allow you to specify which Object types you want to marshal the response into. These methods
+            allow you to dynamically extract whatever types you want at runtime. Here's an example:
+        </p><p>
+
+            </p><pre class="programlisting">
+@Path("/")
+public interface LibraryService {
+
+   @GET
+   @Produces("application/xml")
+   ClientResponse&lt;LibraryPojo&gt; getAllBooks();
+}</pre><p>
+        </p><p>
+
+            We need to include the LibraryPojo in ClientResponse's generic declaration so that the client proxy
+            framework
+            knows how to unmarshal the HTTP response body.
+        </p><p>
+
+
+        </p></div><div class="sect1" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="Sharing_interfaces"/>44.2. Sharing an interface between client and server</h2></div></div></div><p>
+            It is generally possible to share an interface between the client and server. In this scenario, you just
+            have your JAX-RS services implement an annotated interface
+            and then reuse that same interface to create client proxies to invoke on on the client-side. One caveat to
+            this is when your JAX-RS methods return a Response object.
+            The problem on the client is that the client does not have any type information with a raw Response return
+            type declaration. There are two ways of getting around
+            this. The first is to use the @ClientResponseType annotation.
+        </p><pre class="programlisting">
+import org.jboss.resteasy.annotations.ClientResponseType;
+import javax.ws.rs.core.Response;
+
+@Path("/")
+public interface MyInterface {
+
+   @GET
+   @ClientResponseType(String.class)
+   @Produces("text/plain")
+   public Response get();
+}</pre><p>
+            This approach isn't always good enough. The problem is that some MessageBodyReaders and Writers need generic
+            type information in order to match and service a request.
+        </p><pre class="programlisting">
+@Path("/")
+public interface MyInterface {
+
+   @GET
+   @Produces("application/xml")
+   public Response getMyListOfJAXBObjects();
+}</pre><p>
+            In this case, your client code can cast the returned Response object to a ClientResponse and use one of the
+            typed getEntity() methods.
+        </p><pre class="programlisting">
+MyInterface proxy = ProxyFactory.create(MyInterface.class, "http://localhost:8081");
+ClientResponse response = (ClientResponse)proxy.getMyListOfJAXBObjects();
+List&lt;MyJaxbClass&gt; list = response.getEntity(new GenericType&lt;List&lt;MyJaxbClass&gt;&gt;());
+</pre></div><div class="sect1" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="Client_error_handling"/>44.3. Client Error Handling</h2></div></div></div><p>
+
+            If you are using the Client Framework and your proxy methods return something other than a
+            ClientResponse, then the default client error handling comes into play. Any response code that is greater
+            tha
+            399 will automatically cause a org.jboss.resteasy.client.ClientResponseFailure exception
+        </p><p>
+
+</p><pre class="programlisting">
+   @GET
+   ClientResponse&lt;String&gt; get() // will throw an exception if you call getEntity()
+
+   @GET
+   MyObject get(); // will throw a ClientResponseFailure on response code &gt; 399
+</pre><p>
+        </p><p>
+		In cases where Client Proxy methods do not return Response or
+		ClientResponse, it may be not be desireable for the Client Proxy
+		Framework to throw generic ClientResponseFailure exceptions. In these
+		scenarios, where more fine-grained control of thrown Exceptions is
+		required, the ClientErrorInterceptor API may be used.
+		</p><pre class="programlisting">
+public static T getClientService(final Class clazz, final String serverUri)
+{
+	ResteasyProviderFactory pf = ResteasyProviderFactory.getInstance();
+	pf.addClientErrorInterceptor(new DataExceptionInterceptor());
+
+	System.out.println("Generating REST service for: " + clazz.getName());
+	return ProxyFactory.create(clazz, serverUri);
+}
+</pre><p>
+	ClientErrorInterceptor provides a hook into the proxy ClientResponse request lifecycle. If a
+	Client Proxy method is called, resulting in a client exception, and the
+	proxy return type is not Response or ClientResponse, registered
+	interceptors will be given a chance to process the response manually,
+	or throw a new exception. If all interceptors successfully return,
+	RestEasy will re-throw the original encountered exception. Note,
+	however, that the response input stream may need to be reset before
+	additional reads will succeed.
+</p><pre class="programlisting">
+public class ExampleInterceptor implements ClientErrorInterceptor
+{
+	public void handle(ClientResponse response) throws RuntimeException
+	{
+		try
+		{
+			BaseClientResponse r = (BaseClientResponse) response;
+			InputStream stream = r.getStreamFactory().getInputStream();
+			stream.reset();
+			
+			String data = response.getEntity(String.class);
+		
+		
+			if(FORBIDDEN.equals(response.getResponseStatus()))
+			{
+				throw new MyCustomException("This exception will be thrown "
+					+ "instead of the ClientResponseFailure");
+			}
+		
+		}
+		catch (IOException e)
+		{
+			//...
+		}
+		// If we got here, and this method returns successfully, 
+		// RESTEasy will throw the original ClientResponseFailure
+	}
+}
+</pre><p>
+		
+		
+        </p></div><div class="sect1" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="ClientRequest"/>44.4. Manual ClientRequest API</h2></div></div></div><p>Resteasy has a manual API for invoking requests:  org.jboss.resteasy.client.ClientRequest  See the Javadoc for the full capabilities
+    of this class.  Here is a simple example:</p><pre class="programlisting">
+
+   ClientRequest request = new ClientRequest("http://localhost:8080/some/path");
+   request.header("custom-header", "value");
+
+   // We're posting XML and a JAXB object
+   request.body("application/xml", someJaxb);
+
+   // we're expecting a String back
+   ClientResponse&lt;String&gt; response = request.post(String.class);
+   
+   if (response.getStatus() == 200) // OK!
+   {
+      String str = response.getEntity();
+   }
+</pre></div><div class="sect1" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="spring_client_proxy"/>44.5. Spring integration on client side</h2></div></div></div><p>
+            When using spring you can generate a REST client proxy from an interface
+            with the help of org.jboss.resteasy.client.spring.RestClientProxyFactoryBean.
+        </p><pre class="programlisting">
+&lt;bean id="echoClient" class="org.jboss.resteasy.client.spring.RestClientProxyFactoryBean"
+    p:serviceInterface="a.b.c.Echo" p:baseUri="http://server.far.far.away:8080/echo" /&gt;
+</pre></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="Guice1.html"><strong>Prev</strong>Chapter 43. Guice 2.0 Integration</a></li><li class="up"><a accesskey="u" href="#"><strong>Top of page</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Front page</strong></a></li><li class="next"><a accesskey="n" href="AJAX_Client.html"><strong>Next</strong>Chapter 45. AJAX Client</a></li></ul></body></html>

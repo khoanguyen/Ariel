@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title xmlns:rf="java:org.jboss.highlight.XhtmlRendererFactory">Chapter 34. Embedded Container</title><link rel="stylesheet" href="css/jbossorg.css" type="text/css"/><meta xmlns:rf="java:org.jboss.highlight.XhtmlRendererFactory" name="generator" content="DocBook XSL Stylesheets V1.72.0"/><link rel="start" href="index.html" title="RESTEasy JAX-RS"/><link rel="up" href="index.html" title="RESTEasy JAX-RS"/><link rel="prev" href="async_job_service.html" title="Chapter 33. Asynchronous Job Service"/><link rel="next" href="RESTEasy_Server-side_Mock_Framework.html" title="Chapter 35. Server-side Mock Framework"/></head><body><p id="title"><a href="http://www.jboss.org" class="site_href"><strong>JBoss.org</strong></a><a href="http://docs.jboss.org/" class="doc_href"><strong>Community Documentation</strong></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="async_job_service.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="RESTEasy_Server-side_Mock_Framework.html"><strong>Next</strong></a></li></ul><div class="chapter" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="RESTEasy_Embedded_Container"/>Chapter 34. Embedded Container</h2></div></div></div><p>
+
+RESTeasy JAX-RS comes with an embeddable server that you can run within your classpath.  It packages TJWS embeddable servlet container with JAX-RS.
+</p><p>
+
+From the distribution, move the jars in resteasy-jaxrs.war/WEB-INF/lib into your classpath.  You must both programmatically register your JAX-RS beans using the embedded server's Registry.  Here's an example:
+</p><p>
+
+</p><pre class="programlisting">
+
+@Path("/")
+public class MyResource {
+
+   @GET
+   public String get() { return "hello world"; }
+ 
+
+   public static void main(String[] args) throws Exception 
+   {
+      TJWSEmbeddedJaxrsServer tjws = new TJWSEmbeddedJaxrsServer();
+      tjws.setPort(8081);
+      tjws.getDeployment().getActualResourceClasses().add(MyResource.class);
+      tjws.start();
+   }
+}
+
+</pre><p>
+</p><p>
+
+The server can either host non-encrypted or SSL based resources, but not both.  See the Javadoc for TJWSEmbeddedJaxrsServer as well as its superclass TJWSServletServer.  The TJWS website is also a good place for information.
+</p><p>
+
+
+</p><p>
+
+If you want to use Spring, see the SpringBeanProcessor.  Here's a pseudo-code example
+</p><p>
+
+</p><pre class="programlisting">
+
+   public static void main(String[] args) throws Exception 
+   {
+      final TJWSEmbeddedJaxrsServer tjws = new TJWSEmbeddedJaxrsServer();
+      tjws.setPort(8081);
+
+      tjws.start();
+      org.jboss.resteasy.plugins.server.servlet.SpringBeanProcessor processor = new SpringBeanProcessor(tjws.getDeployment().getRegistry(), tjws.getDeployment().getFactory();
+      ConfigurableBeanFactory factory = new XmlBeanFactory(...);
+      factory.addBeanPostProcessor(processor);
+   }
+</pre><p>
+      </p><p>
+
+
+</p></div><ul class="docnav"><li class="previous"><a accesskey="p" href="async_job_service.html"><strong>Prev</strong>Chapter 33. Asynchronous Job Service</a></li><li class="up"><a accesskey="u" href="#"><strong>Top of page</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Front page</strong></a></li><li class="next"><a accesskey="n" href="RESTEasy_Server-side_Mock_Framework.html"><strong>Next</strong>Chapter 35. Server-side Mock Framework</a></li></ul></body></html>

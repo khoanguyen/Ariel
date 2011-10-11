@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title xmlns:rf="java:org.jboss.highlight.XhtmlRendererFactory">Chapter 37. Authentication</title><link rel="stylesheet" href="css/jbossorg.css" type="text/css"/><meta xmlns:rf="java:org.jboss.highlight.XhtmlRendererFactory" name="generator" content="DocBook XSL Stylesheets V1.72.0"/><link rel="start" href="index.html" title="RESTEasy JAX-RS"/><link rel="up" href="index.html" title="RESTEasy JAX-RS"/><link rel="prev" href="Securing_JAX-RS_and_RESTeasy.html" title="Chapter 36. Securing JAX-RS and RESTeasy"/><link rel="next" href="signature.html" title="Chapter 38. Digital Signature Framework"/></head><body><p id="title"><a href="http://www.jboss.org" class="site_href"><strong>JBoss.org</strong></a><a href="http://docs.jboss.org/" class="doc_href"><strong>Community Documentation</strong></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="Securing_JAX-RS_and_RESTeasy.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="signature.html"><strong>Next</strong></a></li></ul><div class="chapter" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="Authentication"/>Chapter 37. Authentication</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="Authentication.html#d0e2674">37.1. OAuth core 1.0a</a></span></dt><dd><dl><dt><span class="section"><a href="Authentication.html#d0e2694">37.1.1. Authenticating with OAuth</a></span></dt><dt><span class="section"><a href="Authentication.html#d0e2772">37.1.2. Accessing protected resources</a></span></dt><dt><span class="section"><a href="Authentication.html#d0e2815">37.1.3. Implementing an OAuthProvider</a></span></dt></dl></dd></dl></div><p>Since Resteasy runs within a servlet container you can use most (all?) mechanism available in your servlet container for authentication.  Basic and Digest
+    authentication are probably the easiest to set up and fit nicely into REST's stateless principle.  Form security can be used, but requires passing
+    the session's cookie value with each request.  We have done some preliminary work on OAuth and also plan to work on OpenID and SAML integration in the future.</p><div class="section" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="d0e2674"/>37.1. OAuth core 1.0a</h2></div></div></div><p>
+    		RESTEasy has preliminary support for <a xmlns:xlink="http://www.w3.org/1999/xlink" href="http://oauth.net/core/1.0a">OAuth core 1.0a</a>.
+    		This includes support for authenticating with OAuth (as described by the <a xmlns:xlink="http://www.w3.org/1999/xlink" href="http://oauth.net/core/1.0a#rfc.section.6">spec section 6</a>)
+    		and OAuth authentication for protected resources (as described by the <a xmlns:xlink="http://www.w3.org/1999/xlink" href="http://oauth.net/core/1.0a#rfc.section.7">spec section 7</a>).
+    	</p><div xmlns:rf="java:org.jboss.highlight.XhtmlRendererFactory" class="important"><h2>Important</h2><p>
+    			This API should be considered experimental and not suitable for production yet, especially for tight security.
+    			It is not final yet and subject to change. If you have comments, bugs, feature requests or questions, contact us
+    			through the <a xmlns:xlink="http://www.w3.org/1999/xlink" href="https://lists.sourceforge.net/lists/listinfo/RESTEasy-developers">RESTEasy mailing list</a>.
+    		</p></div><div class="section" lang="en-US"><div class="titlepage"><div><div><h3 class="title"><a id="d0e2694"/>37.1.1. Authenticating with OAuth</h3></div></div></div><p>
+				OAuth authentication is the process in which Users grant access to their Protected Resources without sharing their credentials with the Consumer.
+			</p><p>
+				OAuth Authentication is done in three steps:
+			</p><div xmlns:rf="java:org.jboss.highlight.XhtmlRendererFactory" class="orderedlist"><ol><li><p>
+						The Consumer obtains an unauthorized Request Token. This part is handled by RESTEasy.
+					</p></li><li><p>
+					The User authorizes the Request Token. This part is <span class="emphasis"><em>not handled by RESTEasy</em></span> because it requires a user interface where the User
+					logs in and authorizes or denies the Request Token. This cannot be implemented automatically as it needs to be integrated with your User login process
+					and user interface.
+					</p></li><li><p>
+					The Consumer exchanges the Request Token for an Access Token. This part is handled by RESTEasy. 
+					</p></li></ol></div><p>
+				In order for RESTEasy to provide the two URL endpoints where the Client will request unauthorized Request Tokens and exchange authorized Request Tokens
+				for Access Tokens, you need to enable the OAuthServlet in your web.xml:
+			</p><pre class="programlisting">
+				
+&lt;!-- The OAuth Servlet handles token exchange --&gt;
+&lt;servlet&gt;
+  &lt;servlet-name&gt;OAuth&lt;/servlet-name&gt;
+  &lt;servlet-class&gt;org.jboss.RESTEasy.auth.oauth.OAuthServlet&lt;/servlet-class&gt;
+&lt;/servlet&gt;
+
+&lt;!-- This will be the base for the token exchange endpoint URL --&gt;
+&lt;servlet-mapping&gt;
+  &lt;servlet-name&gt;OAuth&lt;/servlet-name&gt;
+  &lt;url-pattern&gt;/oauth/*&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;
+				
+			</pre><p>
+				The following configuration options are available using <code class="code">&lt;context-param&gt; elements</code>:
+			</p><table xmlns="" id="d0e2723"><caption>Table 37.1. OAuth Servlet options</caption><thead><tr>
+						<th>Option Name</th>
+						<th>Default</th>
+						<th>Description</th>
+					</tr></thead><tbody><tr>
+						<td>oauth.provider.provider-class</td>
+						<td>*Required*</td>
+						<td>Defines the fully-qualified class name of your OAuthProvider implementation</td>
+					</tr><tr>
+						<td>oauth.provider.tokens.request</td>
+						<td>/requestToken</td>
+						<td>This defines the endpoint URL for requesting unauthorized Request Tokens</td>
+					</tr><tr>
+						<td>oauth.provider.tokens.access</td>
+						<td>/accessToken</td>
+						<td>This defines the endpoint URL for exchanging authorized Request Tokens for Access Tokens</td>
+					</tr></tbody></table></div><div class="section" lang="en-US"><div class="titlepage"><div><div><h3 class="title"><a id="d0e2772"/>37.1.2. Accessing protected resources</h3></div></div></div><p>
+				After successfully receiving the Access Token and Token Secret, the Consumer is able to access the Protected Resources on behalf of the User.
+			</p><p>
+				RESTEasy supports OAuth authentication for protected resources using a servlet filter wich should be mapped in your web.xml for all
+				protected resources:
+			</p><pre class="programlisting">
+				
+&lt;!-- The OAuth Filter handles authentication for protected resources --&gt;
+&lt;filter&gt;
+  &lt;filter-name&gt;OAuth Filter&lt;/filter-name&gt;
+  &lt;filter-class&gt;org.jboss.RESTEasy.auth.oauth.OAuthFilter&lt;/filter-class&gt;
+&lt;/filter&gt;
+	
+&lt;!-- This defines the URLs which should require OAuth authentication for your protected resources --&gt;
+&lt;filter-mapping&gt;
+  &lt;filter-name&gt;OAuth Filter&lt;/filter-name&gt;
+  &lt;url-pattern&gt;/rest/*&lt;/url-pattern&gt;
+&lt;/filter-mapping&gt;
+				
+			</pre><p>
+				The following configuration options are available using <code class="code">&lt;context-param&gt; elements</code>:
+			</p><table xmlns="" id="d0e2786"><caption>Table 37.2. OAuth Filter options</caption><thead><tr>
+						<th>Option Name</th>
+						<th>Default</th>
+						<th>Description</th>
+					</tr></thead><tbody><tr>
+						<td>oauth.provider.provider-class</td>
+						<td>*Required*</td>
+						<td>Defines the fully-qualified class name of your OAuthProvider implementation</td>
+					</tr></tbody></table><p>
+				Once authenticated, the OAuth Servlet Filter will set your request's Principal and Roles, which can then be
+				accessed using the JAX-RS SecurityContext. You can also protect your resources using Roles as described in the section "Securing JAX-RS and RESTeasy".
+			</p></div><div class="section" lang="en-US"><div class="titlepage"><div><div><h3 class="title"><a id="d0e2815"/>37.1.3. Implementing an OAuthProvider</h3></div></div></div><p>
+				In order for RESTEasy to implement OAuth it needs you to provide an instance of <code class="code">OAuthProvider</code> which
+				will provide access to the list of Consumer, Request and Access Tokens. Because one size doesn’t fit all we cannot
+				know if you wish to store your Tokens and Consumer credentials in a configuration file, in memory, or on persistent storage.
+			</p><p>
+				All you need to do is implement the <code class="code">OAuthProvider</code> interface:
+			</p><pre class="programlisting">
+
+public interface OAuthProvider {
+	String getRealm();
+
+	OAuthConsumer getConsumer(String consumerKey)throws OAuthException;
+	OAuthToken getRequestToken(String consumerKey, String requestToken) throws OAuthException;
+	OAuthToken getAccessToken(String consumerKey, String accessToken) throws OAuthException;
+	
+	OAuthToken makeRequestToken(String consumerKey, String callback) throws OAuthException;
+	OAuthToken makeAccessToken(String consumerKey, String requestToken, String verifier) throws OAuthException;
+
+	String authoriseRequestToken(String consumerKey, String requestToken) throws OAuthException;
+
+	void checkTimestamp(OAuthToken token, long timestamp) throws OAuthException;
+}
+
+			</pre><p>
+				If a Consumer Key, or Token doesn’t exist, or if the timestamp is not valid,
+				simply throw an <code class="code">OAuthException</code>.
+			</p><p>
+				The rest of the interfaces used in <code class="code">OAuthProvider</code> are:
+			</p><pre class="programlisting">
+
+public interface OAuthConsumer {
+	String getKey();
+	String getSecret();
+}
+
+public interface OAuthToken {
+	OAuthConsumer getConsumer();
+	String getToken();
+	String getSecret();
+	Principal getPrincipal();
+	Set&lt;String&gt; getRoles();
+}
+
+			</pre></div></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="Securing_JAX-RS_and_RESTeasy.html"><strong>Prev</strong>Chapter 36. Securing JAX-RS and RESTeasy</a></li><li class="up"><a accesskey="u" href="#"><strong>Top of page</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Front page</strong></a></li><li class="next"><a accesskey="n" href="signature.html"><strong>Next</strong>Chapter 38. Digital Signature Framework</a></li></ul></body></html>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title xmlns:rf="java:org.jboss.highlight.XhtmlRendererFactory">Chapter 50. Migration from older versions</title><link rel="stylesheet" href="css/jbossorg.css" type="text/css"/><meta xmlns:rf="java:org.jboss.highlight.XhtmlRendererFactory" name="generator" content="DocBook XSL Stylesheets V1.72.0"/><link rel="start" href="index.html" title="RESTEasy JAX-RS"/><link rel="up" href="index.html" title="RESTEasy JAX-RS"/><link rel="prev" href="doc.html" title="Chapter 49. Documentation Support"/><link rel="next" href="REST_BOOKS.html" title="Chapter 51. Books You Can Read"/></head><body><p id="title"><a href="http://www.jboss.org" class="site_href"><strong>JBoss.org</strong></a><a href="http://docs.jboss.org/" class="doc_href"><strong>Community Documentation</strong></a></p><ul class="docnav"><li class="previous"><a accesskey="p" href="doc.html"><strong>Prev</strong></a></li><li class="next"><a accesskey="n" href="REST_BOOKS.html"><strong>Next</strong></a></li></ul><div class="chapter" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="Migration_from_older_versions"/>Chapter 50. Migration from older versions</h2></div></div></div><div class="toc"><dl><dt><span class="sect1"><a href="Migration_from_older_versions.html#22_221">50.1. Migrating from 2.2.0 to 2.2.1</a></span></dt><dt><span class="sect1"><a href="Migration_from_older_versions.html#21_22">50.2. Migrating from 2.1.x to 2.2</a></span></dt><dt><span class="sect1"><a href="Migration_from_older_versions.html#20_21">50.3. Migrating from 2.0.x to 2.1</a></span></dt><dt><span class="sect1"><a href="Migration_from_older_versions.html#Migrating_to_Resteasy_12_20">50.4. Migrating from 1.2.x to 2.0</a></span></dt><dt><span class="sect1"><a href="Migration_from_older_versions.html#migrating_1.2_1.2.1">50.5. Migrating from 1.2.GA to 1.2.1.GA</a></span></dt><dt><span class="sect1"><a href="Migration_from_older_versions.html#Migrating_to_Resteasy_1_1_1_2">50.6. Migrating from 1.1 to 1.2</a></span></dt></dl></div><div class="sect1" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="22_221"/>50.1. Migrating from 2.2.0 to 2.2.1</h2></div></div></div><div class="itemizedlist"><ul><li>
+	  Had to upgrade JAXB libs from 2.1.x to 2.2.4 as there was a concurrency bug in JAXB impl.
+        </li></ul></div></div><div class="sect1" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="21_22"/>50.2. Migrating from 2.1.x to 2.2</h2></div></div></div><div class="itemizedlist"><ul><li>
+            ClientRequest.getHeaders() always returns a copy. It also converts the values within
+            ClientRequest.getHeadersAsObjects() to string. If you
+            add values to the map returned by getHeaders() nothing happen. Instead add values to the
+            getHeadersAsObjects() map. This allows non-string header objects
+            to propagate through the MessageBodyWriter interceptor and ClientExecutor interceptor chains.
+        </li></ul></div></div><div class="sect1" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="20_21"/>50.3. Migrating from 2.0.x to 2.1</h2></div></div></div><div class="itemizedlist"><ul><li>
+            Slf4j is no longer the default logging mechanism for resteasy. Resteasy also no longer ships with SLF4J
+            libraries. Please read the logging
+            section in the Installation and Configuration chapter for more details.
+        </li><li>
+            The constructor used to instantiate resource and provider classes is now picked based on the requirements of
+            the JAX-RS specification.
+            Specifically, the public constructor with the most arguments is picked. This behavior varies from previous
+            versions where a no-arg
+            constructor is preferred.
+        </li></ul></div></div><div class="sect1" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="Migrating_to_Resteasy_12_20"/>50.4. Migrating from 1.2.x to 2.0</h2></div></div></div><p>
+
+        </p><div class="itemizedlist"><ul><li>
+                TJWS has been forked to fix some bugs. The new groupId is org.jboss.resteasy, the artifactId is
+                tjws. It will match the resteasy distribution version
+            </li><li>
+                Please check out the JBoss 6 integration. It makes things alot easier if you are deploying in that
+                environment
+            </li><li>
+                There is a new Filter implementation that is the preferred deployment mechanism. Servlet-based
+                deployments are still supported, but it is suggested you use to using a FilterDispatcher. See
+                documentation for more details.
+            </li><li>
+                As per required by the spec List or array injection of empty values will return an empty collection
+                or array, not null. I.e.
+                (@QueryParam("name") List&lt;String&gt; param) param will be an empty List. Resteasy 1.2.x and
+                earlier would return null.
+            </li><li>
+                We have forked TJWS, the servlet container used for embedded testing into the group
+                org.jboss.resteasy, with the artifact id of tjws. You will need
+                to remove these dependencies from your maven builds if you are using any part of the resteasy
+                embebbable server. TJWS has a number of startup/shutdown
+                race conditions we had to fix in order to make unit testing viable.
+            </li><li>
+                Spring integration compiled against Spring 3.0.3. It may or may not still work with 2.5.6 and lower
+            </li></ul></div><p>
+    </p></div><div class="sect1" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="migrating_1.2_1.2.1"/>50.5. Migrating from 1.2.GA to 1.2.1.GA</h2></div></div></div><p>
+        Methods @Deprecated within 1.2.GA have been removed. This is in the Client Framework and has to do with all
+        references to Apache HTTP Client. You must now create an ClientExecutor if you want to manage your Apache
+        HTTP Client
+        sessions.
+    </p></div><div class="sect1" lang="en-US"><div class="titlepage"><div><div><h2 class="title"><a id="Migrating_to_Resteasy_1_1_1_2"/>50.6. Migrating from 1.1 to 1.2</h2></div></div></div><p>
+
+        </p><div class="itemizedlist"><ul><li>
+                The resteasy-maven-import artifact has been renamed to resteasy-bom
+            </li><li>
+                Jettison and Fastinfoset have been broken out of the resteasy-jaxb-provider maven module. You will
+                now need to include resteasy-jettison-provider or resteasy-fastinfoset-provider if you use either
+                of these libraries.
+            </li><li>
+                The constructors for ClientRequest that have a HttpClient parameter (Apache Http Client 3.1 API) are
+                now deprecated. They will be removed in the final release of 1.2. You must create a Apache hTTP
+                Client Executor and pass it in as a parameter if you want to re-use existing Apache HttpClient
+                sessions or do any special configuration. The same is true for the ProxyFactoyr methods.
+            </li><li>
+                Apache HttpClient 4.0 support is available if you want to use it. I've had some trouble with it so
+                it is not the default implementation yet for the client framework.
+            </li><li>
+                It is no longer required to call RegisterBuiltin.register() to initialize the set of providers. Too
+                many users forgot to do this (include myself!). You can turn this off by calling the static method
+                ResteasyProviderFactory.setRegisterBuiltinByDefault(false)
+            </li><li>
+                The Embedded Container's API has changed to use org.jboss.resteasy.spi.ResteasyDeployment. Please
+                see embedded documentation for more details.
+            </li></ul></div><p>
+    </p></div></div><ul class="docnav"><li class="previous"><a accesskey="p" href="doc.html"><strong>Prev</strong>Chapter 49. Documentation Support</a></li><li class="up"><a accesskey="u" href="#"><strong>Top of page</strong></a></li><li class="home"><a accesskey="h" href="index.html"><strong>Front page</strong></a></li><li class="next"><a accesskey="n" href="REST_BOOKS.html"><strong>Next</strong>Chapter 51. Books You Can Read</a></li></ul></body></html>
