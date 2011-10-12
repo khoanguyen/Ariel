@@ -11,18 +11,18 @@
   </welcome-file-list>
   
   <servlet>
-    <servlet-name>Ariel</servlet-name>
+    <servlet-name>Ariel_Security</servlet-name>
   	<servlet-class>
 		org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher
     </servlet-class>
     <init-param>
         <param-name>javax.ws.rs.Application</param-name>
-        <param-value>eid.ariel.ArielApp</param-value>
+        <param-value>eid.ariel.security.ArielSecurityApp</param-value>
     </init-param>
   </servlet>
   
   <servlet-mapping>
-  	<servlet-name>Ariel</servlet-name>
+  	<servlet-name>Ariel_Security</servlet-name>
   	<url-pattern>/services/*</url-pattern>
   </servlet-mapping>
   
