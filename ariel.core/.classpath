@@ -9,5 +9,6 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/org.jboss.ide.eclipse.as.core.server.runtime.runtimeTarget/JBoss 7.0 Runtime"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/MongoDb Driver"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/SnakeYaml"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

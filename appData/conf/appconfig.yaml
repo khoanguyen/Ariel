@@ -1,0 +1,24 @@
+env : development
+
+development :
+  databases :
+    - name : eid_security
+      hosts : 
+        - host : localhost
+          port : 27017
+      dbname : eid_security_dev
+      slaveOk : false
+test :
+  databases :
+    - name : eid_security
+      hosts : 
+        - host : localhost
+      dbname : eid_security_test
+production :
+  databases :
+    - name : eid_security
+      hosts : 
+        - host : localhost
+      dbname : eid_security
+      user : eid
+      password : p@ssw0rd
