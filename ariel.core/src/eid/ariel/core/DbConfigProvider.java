@@ -15,13 +15,19 @@ public abstract class DbConfigProvider {
 	private String password = null;
 	private Boolean slaveOk = false;
 	private ArrayList<ServerAddress> hosts;
+	private Boolean secured = false;
 	
-	public DbConfigProvider(Map<String, ?> config){
+	public DbConfigProvider(Map<String, ?> config) throws UnknownHostException{
 		this.config = config;
+		parseConfig(config);
 	}
 	
 	public Map<String, ?> getConfig() {
 		return config;
+	}
+	
+	public Boolean isSecured(){
+		return secured;
 	}
 	
 	public Boolean getSlaveOk() {
@@ -66,6 +72,11 @@ public abstract class DbConfigProvider {
 	
 	protected void setUser(String user) {
 		this.user = user;
+		this.secured = true;
+	}
+	
+	protected void setSlaveOk(Boolean slaveOk) {
+		this.slaveOk = slaveOk;
 	}
 	
 	protected abstract void parseConfig(Map<String, ?> config) throws UnknownHostException;

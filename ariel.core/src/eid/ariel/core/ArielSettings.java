@@ -24,6 +24,7 @@ public class ArielSettings {
 	public final static String DB_SLAVE_OK_KEY = "slaveOk";
 	
 	public final static String SECURITY_DBNAME = "eid_security";
+	public final static String DATA_DBNAME = "eid_data";
 	
 	private ArielSettings(){
 		

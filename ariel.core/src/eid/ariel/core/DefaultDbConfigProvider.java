@@ -8,10 +8,11 @@ import com.mongodb.ServerAddress;
 
 class DefaultDbConfigProvider extends DbConfigProvider {
 
-	public DefaultDbConfigProvider(Map<String, ?> config) {
+	public DefaultDbConfigProvider(Map<String, ?> config) throws UnknownHostException {
 		super(config);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void parseConfig(Map<String, ?> config) throws UnknownHostException {
 		// TODO Auto-generated method stub
@@ -22,8 +23,11 @@ class DefaultDbConfigProvider extends DbConfigProvider {
 			setUser((String) config.get(ArielSettings.DB_USER_KEY));
 
 		if (config.containsKey(ArielSettings.DB_PASSWORD_KEY))
-			setUser((String) config.get(ArielSettings.DB_PASSWORD_KEY));
+			setPassword((String) config.get(ArielSettings.DB_PASSWORD_KEY));
 
+		if (config.containsKey(ArielSettings.DB_SLAVE_OK_KEY))
+			setSlaveOk((Boolean) config.get(ArielSettings.DB_SLAVE_OK_KEY));
+		
 		setHosts(parseHosts((ArrayList<Map<String, ?>>) config
 				.get(ArielSettings.DB_HOSTS_KEY)));
 	}
@@ -41,7 +45,7 @@ class DefaultDbConfigProvider extends DbConfigProvider {
 			}else{
 				serverAddress = new ServerAddress(
 						(String) host.get(ArielSettings.DB_HOST_KEY));
-			}
+			} 
 			result.add(serverAddress);
 		}
 

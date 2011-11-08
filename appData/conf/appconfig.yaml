@@ -4,9 +4,15 @@ development :
   databases :
     - name : eid_security
       hosts : 
-        - host : localhost
+        - host : 127.0.0.1
           port : 27017
       dbname : eid_security_dev
+      slaveOk : false
+    - name : eid_data
+      hosts :
+        - host : 127.0.0.1
+          port : 27017
+      dbname : eid_data_dev
       slaveOk : false
 test :
   databases :
@@ -14,6 +20,12 @@ test :
       hosts : 
         - host : localhost
       dbname : eid_security_test
+    - name : eid_data
+      hosts :
+        - host : localhost
+          port : 27017
+      dbname : eid_data_test
+      slaveOk : false
 production :
   databases :
     - name : eid_security
@@ -21,4 +33,10 @@ production :
         - host : localhost
       dbname : eid_security
       user : eid
-      password : p@ssw0rd
+      password : p@ssw0rd        
+    - name : eid_data
+      hosts :
+        - host : localhost
+          port : 27017
+      dbname : eid_data
+      slaveOk : false

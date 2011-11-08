@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -15,8 +16,9 @@ public class ArielConfig {
 	private static ArielConfig instance;
 	Map<String, ?> envConfig;
 	String environment;
-	DbConfigProvider securityDbConfigProvider;
+	DbConfigProvider securityDbConfigProvider, dataDbConfigProvider;
 
+	@SuppressWarnings("unchecked")
 	private ArielConfig() throws FileNotFoundException {
 		InputStream stream = new FileInputStream(new File(
 				ArielSettings.CONFIG_FILE_PATH));
@@ -26,7 +28,15 @@ public class ArielConfig {
 		envConfig = (Map<String, ?>) config.get(environment);
 	}
 
-	public DbConfigProvider getSecurityDbConfigProvider() {
+	public DbConfigProvider getDatabDbConfigProvider() throws UnknownHostException {
+		if (dataDbConfigProvider == null) {
+			dataDbConfigProvider = new DefaultDbConfigProvider(
+					getDataDatabaseConfig());
+		}
+		return dataDbConfigProvider;
+	}
+	
+	public DbConfigProvider getSecurityDbConfigProvider() throws UnknownHostException {
 		if (securityDbConfigProvider == null) {
 			securityDbConfigProvider = new DefaultDbConfigProvider(
 					getSecurityDatabaseConfig());
@@ -57,12 +67,32 @@ public class ArielConfig {
 		this.securityDbConfigProvider = (DbConfigProvider) con
 				.newInstance(getSecurityDatabaseConfig());
 	}
+	
+	public void setDataDbConfigProviderClass(Class<?> providerClass)
+			throws IllegalArgumentException, InstantiationException,
+			IllegalAccessException, InvocationTargetException,
+			SecurityException, NoSuchMethodException {
+		Constructor<?> con = providerClass.getConstructor(Map.class);
+		this.dataDbConfigProvider = (DbConfigProvider) con
+				.newInstance(getSecurityDatabaseConfig());
+	}
 
+	@SuppressWarnings("unchecked")
 	private ArrayList<Map<String, ?>> getDatabaseConfig() {
 		return (ArrayList<Map<String, ?>>) envConfig
 				.get(ArielSettings.DB_KEY);
 	}
 
+	private Map<String, ?> getDataDatabaseConfig() {
+		for (Map<String, ?> map : getDatabaseConfig()) {
+			if (map.get(ArielSettings.DB_NAME_KEY).toString()
+					.equals(ArielSettings.DATA_DBNAME)) {
+				return map;
+			}
+		}
+		return null;
+	}
+	
 	private Map<String, ?> getSecurityDatabaseConfig() {
 		for (Map<String, ?> map : getDatabaseConfig()) {
 			if (map.get(ArielSettings.DB_NAME_KEY).toString()

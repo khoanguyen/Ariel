@@ -10,6 +10,8 @@ import javax.ws.rs.core.Application;
 
 import eid.ariel.core.ArielSettings;
 import eid.ariel.core.PackageReader;
+import eid.ariel.exception.InvalidParamExceptionMapper;
+import eid.ariel.interceptor.AuthorizationInterceptor;
 
 public class ArielApp extends Application {
 	private Set<Class<?>> classes = new HashSet<Class<?>>();
@@ -44,12 +46,15 @@ public class ArielApp extends Application {
 						e.printStackTrace();
 					}
 				}
+				for(Class<?> providerClass : reader.getProviderClasses())
+					classes.add(providerClass);
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-		singletons.add(new TestService());
+
+		registerInternal();
 	}
 
 	@Override
@@ -62,5 +67,13 @@ public class ArielApp extends Application {
 	public Set<Object> getSingletons() {
 		// TODO Auto-generated method stub
 		return singletons;
+	}
+	
+	private void registerInternal(){
+		classes.add(InvalidParamExceptionMapper.class);
+		classes.add(AuthorizationInterceptor.class);
+		
+		// Test
+		singletons.add(new TestService());
 	}
 }
