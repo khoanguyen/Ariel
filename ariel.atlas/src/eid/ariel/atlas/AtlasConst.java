@@ -19,9 +19,6 @@ public final class AtlasConst {
 	public static final int ERROR_USER_LOCKED_CODE = 0x10003;
 	public static final String ERROR_USER_LOCKED_MESSAGE = "User is locked";
 	
-	public static final int ERROR_RECORD_NOT_EXIST_CODE = 0x10004;
-	public static final String ERROR_RECORD_NOT_EXIST_MESSAGE = "does not exist";
-	
 	private AtlasConst() {
 	}
 

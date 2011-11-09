@@ -45,6 +45,6 @@ public final class SecurityUserHelper {
 	public static void deleteUser(Map<String, Object> user)
 			throws UnknownHostException, MongoException, FileNotFoundException {
 		MongoDbManager.securityAdapter().from(SecurityUser.COLLECTION)
-				.delete(user);
+				.delete((String)user.get(SecurityUser.FIELD_ID));
 	}
 }

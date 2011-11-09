@@ -14,7 +14,11 @@ import com.mongodb.DBObject;
 
 public class MongoCollection implements IDataCollection<Map<String, Object>> {
 
-	DBCollection collection;
+	public final static String FETCH_SORTED_FIELDS_KEY = "sortedFields";
+	public final static String FETCH_START_INDEX_KEY = "startIndex";
+	public final static String FETCH_LIMIT_KEY = "limit";
+
+	private DBCollection collection;
 
 	public MongoCollection(DBCollection collection) {
 		this.collection = collection;
@@ -93,10 +97,10 @@ public class MongoCollection implements IDataCollection<Map<String, Object>> {
 	}
 
 	@Override
-	public void delete(Map<String, Object> target) {
+	public void delete(String id) {
 		// TODO Auto-generated method stub
 		MongoQueryBuilder builder = new MongoQueryBuilder();
-		builder.put("_id", (String) target.get("_id"));
+		builder.put("_id", id);
 		collection.remove(new BasicDBObject(builder.getQuery()));
 	}
 
@@ -107,9 +111,13 @@ public class MongoCollection implements IDataCollection<Map<String, Object>> {
 	}
 
 	@Override
-	public List<Map<String, Object>> fetch(Map<String, Object> sortedFields,
-			int startIndex, int limit) {
+	public List<Map<String, Object>> fetch(Map<String, Object> fetch) {
 		// TODO Auto-generated method stub
+		@SuppressWarnings("unchecked")
+		Map<String, Object> sortedFields = (Map<String, Object>) fetch
+				.get(FETCH_SORTED_FIELDS_KEY);
+		int startIndex = (Integer) fetch.get(FETCH_START_INDEX_KEY);
+		int limit = (Integer) fetch.get(FETCH_LIMIT_KEY);
 		DBCursor cursor = collection.find()
 				.sort(new BasicDBObject(sortedFields)).skip(startIndex)
 				.limit(limit);
@@ -117,10 +125,27 @@ public class MongoCollection implements IDataCollection<Map<String, Object>> {
 	}
 
 	@Override
-	public List<Map<String, Object>> fetch(Map<String, Object> query,
-			Map<String, Object> sortedFields, int limit) {
+	public List<Map<String, Object>> query(Map<String, Object> query,
+			Map<String, Object> fetch) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public boolean verifyFetch(Map<String, Object> fetch) {
+		// TODO Auto-generated method stub
+		return fetch.containsKey(FETCH_SORTED_FIELDS_KEY) &&
+				fetch.containsKey(FETCH_START_INDEX_KEY) &&
+				fetch.containsKey(FETCH_LIMIT_KEY) &&
+				(fetch.get(FETCH_SORTED_FIELDS_KEY) instanceof Map) &&
+				(fetch.get(FETCH_START_INDEX_KEY) instanceof Integer) &&
+				(fetch.get(FETCH_LIMIT_KEY) instanceof Integer);
+	}
+
+	@Override
+	public boolean verifyQuery(Map<String, Object> query) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

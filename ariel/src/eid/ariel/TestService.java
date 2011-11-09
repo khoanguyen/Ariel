@@ -18,12 +18,7 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import com.mongodb.MongoException;
-
-import eid.ariel.annotation.LoginRequired;
 import eid.ariel.core.ArielConfig;
-import eid.ariel.data.IDataAdapter;
-import eid.ariel.data.MongoDataAdapter;
-import eid.ariel.data.MongoDbManager;
 
 @Path("/test")
 public class TestService {
@@ -43,6 +38,7 @@ public class TestService {
 		return result;
 	}
 	
+	@SuppressWarnings("unchecked")
 	@GET
 	@Path("/conf")
 	@Produces(MediaType.APPLICATION_JSON)
